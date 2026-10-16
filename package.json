@@ -1,0 +1,12 @@
+{
+  "name": "tp-todo-app",
+  "version": "1.0.0",
+  "description": "Petite To-Do List Node.js pour le TP Docker / Kubernetes / AWS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
