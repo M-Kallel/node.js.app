@@ -1,63 +1,47 @@
-const express = require('express');
-const path = require('path');
+const app = require('./src/app');
+const pool = require('./src/database');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const APP_NAME = 'TP To-Do App';
-const ENV = process.env.NODE_ENV || 'development';
+const PORT = Number(process.env.PORT || 3000);
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
+  throw new Error('PORT invalide');
+}
 
-// Les tâches sont gardées en mémoire (suffisant pour le TP)
-let tasks = [];
-let nextId = 1;
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(JSON.stringify({
+    level: 'info',
+    event: 'server_started',
+    port: PORT,
+    version: '2.0.0'
+  }));
+});
 
-// Route de santé (utile pour Docker / Kubernetes)
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    app: APP_NAME,
-    environment: ENV,
-    hostname: require('os').hostname(), // nom du Pod sous Kubernetes
-    uptime: Math.round(process.uptime())
+server.on('error', error => {
+  console.error(error.message);
+  process.exit(1);
+});
+
+let stopping = false;
+
+function shutdown(signal) {
+  if (stopping) return;
+  stopping = true;
+
+  console.log(JSON.stringify({ event: 'shutdown', signal }));
+
+  const timer = setTimeout(() => process.exit(1), 10000);
+  timer.unref();
+
+  server.close(async () => {
+    try {
+      await pool.end();
+      clearTimeout(timer);
+      process.exit(0);
+    } catch {
+      process.exit(1);
+    }
   });
-});
+}
 
-// Informations d'identification de l'application
-app.get('/api/info', (req, res) => {
-  res.json({
-    app: APP_NAME,
-    environment: ENV,
-    hostname: require('os').hostname(),
-    port: PORT
-  });
-});
-
-// API des tâches
-app.get('/api/tasks', (req, res) => res.json(tasks));
-
-app.post('/api/tasks', (req, res) => {
-  const title = (req.body.title || '').trim();
-  if (!title) return res.status(400).json({ error: 'Titre requis' });
-  const task = { id: nextId++, title, done: false };
-  tasks.push(task);
-  res.status(201).json(task);
-});
-
-app.patch('/api/tasks/:id', (req, res) => {
-  const task = tasks.find(t => t.id === Number(req.params.id));
-  if (!task) return res.status(404).json({ error: 'Introuvable' });
-  task.done = !task.done;
-  res.json(task);
-});
-
-app.delete('/api/tasks/:id', (req, res) => {
-  tasks = tasks.filter(t => t.id !== Number(req.params.id));
-  res.status(204).end();
-});
-
-// "0.0.0.0" : indispensable pour être accessible depuis l'extérieur (Docker, VM)
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`${APP_NAME} démarrée sur le port ${PORT} (${ENV})`);
-});
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
