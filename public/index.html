@@ -1,76 +1,266 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TP To-Do App</title>
-  <style>
-    body { font-family: system-ui, sans-serif; background: #f3f4f6; margin: 0; padding: 2rem; }
-    .card { max-width: 480px; margin: auto; background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
-    h1 { margin-top: 0; }
-    .info { font-size: .8rem; color: #6b7280; margin-bottom: 1rem; }
-    form { display: flex; gap: .5rem; }
-    input { flex: 1; padding: .6rem; border: 1px solid #d1d5db; border-radius: 8px; }
-    button { padding: .6rem 1rem; border: 0; border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer; }
-    ul { list-style: none; padding: 0; }
-    li { display: flex; justify-content: space-between; align-items: center; padding: .6rem 0; border-bottom: 1px solid #e5e7eb; }
-    li span { cursor: pointer; }
-    li.done span { text-decoration: line-through; color: #9ca3af; }
-    li button { background: #ef4444; padding: .3rem .6rem; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaskFlow — Gestion des tâches</title>
+<style>
+:root{color-scheme:dark;--text:#edf2ff;--muted:#a4b0cd;--line:#ffffff16;--accent:#8b7bff}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Inter,system-ui,sans-serif;color:var(--text);background:radial-gradient(ellipse at 10% 0%,#35296766,transparent 48%),radial-gradient(ellipse at 100% 60%,#123b5266,transparent 45%),#0b1020}
+button,input{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+.shell{max-width:1000px;margin:auto;padding:32px 24px 60px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:25px;border-bottom:1px solid var(--line)}
+.brand{font-weight:800;font-size:23px;letter-spacing:-1px}
+.logo{display:inline-grid;place-items:center;width:36px;height:36px;margin-right:10px;background:var(--accent);border-radius:11px}
+.status{font-size:12px;padding:8px 12px;border:1px solid var(--line);border-radius:30px;color:var(--muted)}
+.status.ok{color:#77e3b1;background:#77e3b10b}
+.hero{margin:52px 0 30px}
+.eyebrow{font-size:11px;letter-spacing:2px;color:#b6aaff;text-transform:uppercase}
+h1{font-size:clamp(32px,6vw,48px);letter-spacing:-2px;margin:14px 0}
+.subtitle{color:var(--muted);line-height:1.7;margin:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0}
+.stat,.panel{background:#141c30cc;border:1px solid var(--line);border-radius:18px}
+.stat{padding:20px}
+.stat span{display:block;font-size:12px;color:var(--muted)}
+.stat strong{display:block;font-size:30px;margin-top:8px}
+.panel{overflow:hidden;box-shadow:0 24px 70px #0003}
+.panel-top{padding:24px;border-bottom:1px solid var(--line)}
+h2{font-size:17px;margin:0 0 18px}
+form{display:flex;gap:10px}
+input{min-width:0;flex:1;background:#0b1223;border:1px solid #34405e;border-radius:10px;color:var(--text);padding:13px 15px;outline:none}
+input:focus{border-color:var(--accent)}
+.primary{border:0;border-radius:10px;padding:12px 20px;background:var(--accent);color:white;font-weight:700}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 24px;flex-wrap:wrap}
+.filters{display:flex;gap:6px}
+.filter,.refresh{background:transparent;color:var(--muted);border:1px solid transparent;border-radius:8px;padding:8px 10px}
+.filter.active{background:#8b7bff20;color:#c6bcff}
+.refresh{border-color:var(--line)}
+ul{list-style:none;padding:0 24px;margin:0}
+li{display:flex;align-items:center;gap:14px;padding:19px 0;border-top:1px solid var(--line)}
+.check{flex-shrink:0;width:24px;height:24px;border:1px solid #596782;background:transparent;border-radius:8px;color:white}
+.done .check{background:#31846c;border-color:#31846c}
+.task-content{flex:1;min-width:0}
+.task-title{display:block;overflow-wrap:anywhere;font-size:14px}
+.done .task-title{text-decoration:line-through;color:var(--muted)}
+.task-date{display:block;color:#7f8ca9;font-size:11px;margin-top:5px}
+.delete{background:transparent;color:#f3a4af;border:1px solid #f3a4af25;border-radius:8px;padding:7px 10px;font-size:12px}
+.empty{text-align:center;padding:38px 20px;color:var(--muted)}
+.message{margin:0 24px 16px;color:#ffb2bb;font-size:13px;line-height:1.6}
+footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#7f8ca9;font-size:11px;margin-top:24px}
+:focus-visible{outline:2px solid #b6aaff;outline-offset:3px}
+@media(max-width:550px){.shell{padding:22px 14px}.stats{gap:8px}.stat{padding:14px}.panel-top{padding:18px}form{flex-direction:column}.toolbar{padding:16px}ul{padding:0 18px}.status{max-width:170px}footer{line-height:1.7}}
+</style>
 </head>
 <body>
-  <div class="card">
-    <h1>📝 To-Do List</h1>
-    <div class="info" id="info">Chargement…</div>
-    <form id="form">
-      <input id="title" placeholder="Nouvelle tâche…" autocomplete="off">
-      <button>Ajouter</button>
-    </form>
-    <ul id="list"></ul>
-  </div>
+<div class="shell">
+<header>
+<div class="brand"><span class="logo">✓</span>TaskFlow</div>
+<div class="status" id="status" role="status">Connexion en cours…</div>
+</header>
 
-  <script>
-    const list = document.getElementById('list');
+<section class="hero">
+<div class="eyebrow">Espace de travail personnel</div>
+<h1>Une journée mieux organisée.</h1>
+<p class="subtitle">Capturez vos idées, suivez vos priorités et avancez une tâche à la fois.</p>
+</section>
 
-    async function loadInfo() {
-      const i = await (await fetch('/api/info')).json();
-      document.getElementById('info').textContent =
-        `${i.app} • env: ${i.environment} • pod/hôte: ${i.hostname}`;
+<section class="stats" aria-label="Statistiques">
+<div class="stat"><span>Total des tâches</span><strong id="total">—</strong></div>
+<div class="stat"><span>À faire</span><strong id="pending">—</strong></div>
+<div class="stat"><span>Terminées</span><strong id="completed">—</strong></div>
+</section>
+
+<main class="panel">
+<div class="panel-top">
+<h2>Mes tâches</h2>
+<form id="form">
+<label for="title" hidden>Nouvelle tâche</label>
+<input id="title" placeholder="Quelle est votre prochaine priorité ?" maxlength="200" required autocomplete="off">
+<button class="primary" id="add" type="submit">+ Ajouter une tâche</button>
+</form>
+</div>
+<div class="toolbar">
+<div class="filters" aria-label="Filtrer les tâches">
+<button type="button" class="filter active" data-filter="all" aria-pressed="true">Toutes</button>
+<button type="button" class="filter" data-filter="pending" aria-pressed="false">À faire</button>
+<button type="button" class="filter" data-filter="done" aria-pressed="false">Terminées</button>
+</div>
+<button type="button" class="refresh" id="refresh">↻ Actualiser</button>
+</div>
+<p class="message" id="message" role="alert"></p>
+<ul id="list" aria-label="Liste des tâches"></ul>
+<div class="empty" id="empty">Chargement des tâches…</div>
+</main>
+
+<footer>
+<span>TaskFlow · Mootez Kallel</span>
+<span id="info">Connexion au serveur…</span>
+</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let tasks = [];
+let filter = 'all';
+let busy = false;
+
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(10000)
+  });
+  if (response.status === 204) return null;
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `Erreur HTTP ${response.status}`);
+  return data;
+}
+
+function render() {
+  $('total').textContent = tasks.length;
+  $('pending').textContent = tasks.filter(t => !t.done).length;
+  $('completed').textContent = tasks.filter(t => t.done).length;
+  $('list').replaceChildren();
+
+  const visible = tasks.filter(t =>
+    filter === 'all' || (filter === 'done' ? t.done : !t.done)
+  );
+
+  $('empty').hidden = visible.length > 0;
+  $('empty').textContent = tasks.length
+    ? 'Aucune tâche dans cette catégorie.'
+    : 'Un espace libre pour vos prochaines idées. Ajoutez votre première tâche.';
+
+  for (const task of visible) {
+    const li = document.createElement('li');
+    if (task.done) li.className = 'done';
+
+    const check = document.createElement('button');
+    check.className = 'check';
+    check.type = 'button';
+    check.textContent = task.done ? '✓' : '';
+    check.setAttribute('aria-label', task.done ? 'Marquer comme à faire' : 'Terminer la tâche');
+    check.setAttribute('aria-pressed', String(task.done));
+    check.disabled = busy;
+    check.onclick = () => mutate(() => api(`/api/tasks/${task.id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({done: !task.done})
+    }));
+
+    const content = document.createElement('div');
+    content.className = 'task-content';
+    const title = document.createElement('span');
+    title.className = 'task-title';
+    title.textContent = task.title;
+    content.append(title);
+
+    if (task.created_at) {
+      const date = document.createElement('span');
+      date.className = 'task-date';
+      date.textContent = new Date(task.created_at).toLocaleString('fr-FR', {
+        dateStyle: 'medium', timeStyle: 'short'
+      });
+      content.append(date);
     }
 
-    async function loadTasks() {
-      const tasks = await (await fetch('/api/tasks')).json();
-      list.innerHTML = '';
-      tasks.forEach(t => {
-        const li = document.createElement('li');
-        if (t.done) li.className = 'done';
-        const span = document.createElement('span');
-        span.textContent = t.title;
-        span.onclick = async () => { await fetch('/api/tasks/' + t.id, { method: 'PATCH' }); loadTasks(); };
-        const del = document.createElement('button');
-        del.textContent = 'X';
-        del.onclick = async () => { await fetch('/api/tasks/' + t.id, { method: 'DELETE' }); loadTasks(); };
-        li.append(span, del);
-        list.appendChild(li);
-      });
-    }
-
-    document.getElementById('form').onsubmit = async e => {
-      e.preventDefault();
-      const input = document.getElementById('title');
-      if (!input.value.trim()) return;
-      await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: input.value })
-      });
-      input.value = '';
-      loadTasks();
+    const del = document.createElement('button');
+    del.className = 'delete';
+    del.type = 'button';
+    del.textContent = 'Supprimer';
+    del.setAttribute('aria-label', `Supprimer : ${task.title}`);
+    del.disabled = busy;
+    del.onclick = () => {
+      if (confirm('Supprimer cette tâche ?')) {
+        mutate(() => api(`/api/tasks/${task.id}`, {method: 'DELETE'}));
+      }
     };
 
-    loadInfo();
-    loadTasks();
-  </script>
+    li.append(check, content, del);
+    $('list').append(li);
+  }
+}
+
+async function loadTasks() {
+  const data = await api('/api/tasks');
+  if (!Array.isArray(data)) throw new Error('Réponse du serveur invalide');
+  tasks = data;
+  render();
+}
+
+async function refreshStatus() {
+  try {
+    await api('/ready');
+    $('status').textContent = '● PostgreSQL connecté';
+    $('status').className = 'status ok';
+  } catch {
+    $('status').textContent = '● Connexion indisponible';
+    $('status').className = 'status';
+  }
+
+  try {
+    const info = await api('/api/info');
+    $('info').textContent = `${info.environment} · Pod : ${info.hostname}`;
+  } catch {
+    $('info').textContent = 'Informations serveur indisponibles';
+  }
+}
+
+async function mutate(action) {
+  if (busy) return;
+  busy = true;
+  $('add').disabled = true;
+  $('message').textContent = '';
+  render();
+
+  try {
+    await action();
+    await loadTasks();
+  } catch (error) {
+    $('message').textContent = error.message;
+  } finally {
+    busy = false;
+    $('add').disabled = false;
+    render();
+    refreshStatus();
+  }
+}
+
+$('form').onsubmit = event => {
+  event.preventDefault();
+  const title = $('title').value.trim();
+  if (!title) return;
+  mutate(async () => {
+    await api('/api/tasks', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({title})
+    });
+    $('title').value = '';
+  });
+};
+
+document.querySelectorAll('[data-filter]').forEach(button => {
+  button.onclick = () => {
+    filter = button.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(b => {
+      const active = b === button;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-pressed', String(active));
+    });
+    render();
+  };
+});
+
+$('refresh').onclick = () => mutate(async () => {});
+loadTasks().catch(error => {
+  $('message').textContent = error.message;
+  $('empty').textContent = 'Impossible de charger les tâches. Cliquez sur Actualiser.';
+});
+refreshStatus();
+setInterval(refreshStatus, 30000);
+</script>
 </body>
 </html>

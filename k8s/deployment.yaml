@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: nodejs-app
-          image: mootezkallel/nodejs-app:2.0
+          image: mootezkallel/nodejs-app:2.1
           imagePullPolicy: Always
           ports:
             - name: http
